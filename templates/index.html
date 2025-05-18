@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digit Recognition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #e0e0e0;
+            --accent-color: #4CAF50;
+            --accent-hover: #45a049;
+            --danger-color: #ff4444;
+            --danger-hover: #cc0000;
+            --shadow-color: rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --border-color: #404040;
+            --accent-color: #66bb6a;
+            --accent-hover: #81c784;
+            --danger-color: #ff5252;
+            --danger-hover: #ff7070;
+            --shadow-color: rgba(0,0,0,0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background-color: var(--bg-primary);
+            border-radius: 15px;
+            box-shadow: 0 4px 6px var(--shadow-color);
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 24px;
+            padding: 10px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .drawing-section {
+            background-color: var(--bg-primary);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px var(--shadow-color);
+        }
+
+        .gallery-section {
+            background-color: var(--bg-primary);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px var(--shadow-color);
+        }
+
+        .canvas-container {
+            margin: 20px auto;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #drawingCanvas {
+            cursor: crosshair;
+            background-color: white;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        #clearButton {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        #clearButton:hover {
+            background-color: var(--danger-hover);
+            transform: translateY(-2px);
+        }
+
+        #predictButton {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        #predictButton:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        #undoButton, #redoButton {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        #undoButton:hover, #redoButton:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        #undoButton:disabled, #redoButton:disabled {
+            background-color: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .result-container {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: var(--bg-secondary);
+        }
+
+        #result {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        #confidence {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .gallery-item {
+            background-color: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .gallery-item .prediction {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .gallery-item .confidence {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .loading {
+            display: none;
+            margin: 20px auto;
+        }
+
+        .loading:after {
+            content: " ";
+            display: block;
+            width: 30px;
+            height: 30px;
+            margin: 8px auto;
+            border-radius: 50%;
+            border: 4px solid var(--text-primary);
+            border-color: var(--text-primary) transparent var(--text-primary) transparent;
+            animation: loading 1.2s linear infinite;
+        }
+
+        @keyframes loading {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .upload-section {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: var(--bg-secondary);
+            text-align: center;
+        }
+
+        .file-input-container {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: var(--accent-color);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-input-label:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .predict-button {
+            padding: 12px 24px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px 0;
+        }
+
+        .predict-button:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .predict-button:disabled {
+            background-color: var(--disabled-color);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .evaluation-section {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: var(--bg-secondary);
+        }
+
+        .confusion-matrix {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
+
+        .gallery-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .gallery-item {
+            position: relative;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .gallery-item .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .gallery-item:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .prediction-animation {
+            animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            80% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .processed-preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .processed-preview img {
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+        }
+
+        .tab-container {
+            margin-bottom: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            background-color: var(--bg-secondary);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .drawing-tools {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: var(--bg-secondary);
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tool-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tool-button.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .canvas-container {
+            position: relative;
+            margin: 20px auto;
+        }
+
+        #gridCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            opacity: 0.2;
+        }
+
+        .tutorial-box {
+            background-color: var(--bg-secondary);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tutorial-box h3 {
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+
+        .tutorial-box ul {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+
+        .tutorial-box li {
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .tutorial-box li:before {
+            content: "•";
+            color: var(--accent-color);
+            position: absolute;
+            left: -15px;
+        }
+
+        .real-time-prediction {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-secondary);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .evaluation-results {
+            margin-top: 20px;
+        }
+
+        .accuracy-box {
+            background-color: var(--bg-primary);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .analytics-card {
+            background-color: var(--bg-primary);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+        }
+
+        .analytics-card h3 {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-size: 18px;
+        }
+
+        .per-digit-stat {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 5px;
+            background-color: var(--bg-secondary);
+        }
+
+        .digit-label {
+            font-weight: bold;
+            margin-right: 10px;
+            min-width: 30px;
+        }
+
+        .accuracy-bar {
+            flex-grow: 1;
+            height: 20px;
+            background-color: var(--bg-primary);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .accuracy-fill {
+            height: 100%;
+            background-color: var(--accent-color);
+            transition: width 0.5s ease-out;
+        }
+
+        .accuracy-value {
+            margin-left: 10px;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .misclassified-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .misclassified-item {
+            text-align: center;
+            padding: 10px;
+            background-color: var(--bg-secondary);
+            border-radius: 5px;
+        }
+
+        .misclassified-item img {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 5px;
+        }
+
+        .misclassified-item .prediction {
+            font-size: 14px;
+            color: var(--danger-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Digit Recognition</h1>
+            <button class="theme-toggle" id="themeToggle">🌓</button>
+        </div>
+
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="draw">Draw Digit</button>
+                <button class="tab-button" data-tab="upload">Upload Image</button>
+                <button class="tab-button" data-tab="evaluate">Evaluate Model</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="tab-content active" id="drawTab">
+                <div class="drawing-section">
+                    <h2 class="section-title">Draw a Digit</h2>
+                    <div class="tutorial-box">
+                        <h3>How to Draw:</h3>
+                        <ul>
+                            <li>Draw a single digit (0-9) in the center of the canvas</li>
+                            <li>Make the digit large enough to fill most of the canvas height</li>
+                            <li>Draw the digit in a clear, standard format</li>
+                            <li>Use the eraser or clear button to correct mistakes</li>
+                        </ul>
+                    </div>
+                    <div class="drawing-tools">
+                        <div class="tool-group">
+                            <label>Tool:</label>
+                            <button class="tool-button active" id="penTool">✏️ Pen</button>
+                            <button class="tool-button" id="eraserTool">🧹 Eraser</button>
+                        </div>
+                        <div class="tool-group">
+                            <label>Size:</label>
+                            <input type="range" id="brushSize" min="5" max="40" value="20">
+                            <span id="brushSizeValue">20px</span>
+                        </div>
+                        <div class="tool-group">
+                            <label>Grid:</label>
+                            <button class="tool-button" id="toggleGrid">📏 Toggle Grid</button>
+                        </div>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="drawingCanvas" width="280" height="280"></canvas>
+                        <canvas id="gridCanvas" width="280" height="280"></canvas>
+                    </div>
+                    <div class="button-container">
+                        <button id="undoButton">↩️ Undo</button>
+                        <button id="clearButton">Clear</button>
+                        <button id="predictButton">Predict</button>
+                        <button id="redoButton">↪️ Redo</button>
+                    </div>
+                    <div class="real-time-prediction">
+                        <label class="switch">
+                            <input type="checkbox" id="realTimeToggle">
+                            <span class="slider round"></span>
+                        </label>
+                        <span>Real-time Prediction</span>
+                    </div>
+                    <div class="loading" id="loading"></div>
+                    <div class="processed-preview" id="processedPreview"></div>
+                    <div class="result-container">
+                        <div id="result"></div>
+                        <div id="confidence"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="uploadTab">
+                <div class="upload-section">
+                    <h2 class="section-title">Upload Image</h2>
+                    <div class="file-input-container">
+                        <input type="file" id="imageUpload" class="file-input" accept="image/*">
+                        <label for="imageUpload" class="file-input-label">Choose Image</label>
+                    </div>
+                    <div class="loading" id="uploadLoading"></div>
+                    <div id="uploadPreview"></div>
+                    <div class="result-container">
+                        <div id="uploadResult"></div>
+                        <div id="uploadConfidence"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="evaluateTab">
+                <div class="evaluation-section">
+                    <h2 class="section-title">Model Evaluation</h2>
+                    <button id="evaluateButton" class="tab-button">Run Evaluation</button>
+                    <div class="loading" id="evaluateLoading"></div>
+                    <div class="evaluation-results">
+                        <div id="accuracyResult" class="accuracy-box"></div>
+                        <div class="analytics-grid">
+                            <div class="analytics-card">
+                                <h3>Performance Visualization</h3>
+                                <div id="performancePlots"></div>
+                            </div>
+                            <div class="analytics-card">
+                                <h3>Per-Digit Performance</h3>
+                                <div id="perDigitStats"></div>
+                            </div>
+                            <div class="analytics-card">
+                                <h3>Misclassification Examples</h3>
+                                <div id="misclassifiedExamples"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-section">
+                <h2 class="section-title">Prediction Gallery</h2>
+                <div class="gallery-controls">
+                    <button id="clearGalleryButton" class="tab-button">Clear Gallery</button>
+                    <span id="galleryCount">0 predictions</span>
+                </div>
+                <div class="gallery" id="gallery"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+        
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Canvas setup
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const clearButton = document.getElementById('clearButton');
+        const resultDiv = document.getElementById('result');
+        const confidenceDiv = document.getElementById('confidence');
+        const loadingDiv = document.getElementById('loading');
+        const gallery = document.getElementById('gallery');
+
+        // Set up canvas
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 20;
+        ctx.lineCap = 'round';
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        // Drawing history for undo/redo
+        let drawingHistory = [];
+        let historyIndex = -1;
+        const maxHistory = 50;
+
+        // Current tool state
+        let currentTool = 'pen';
+        let isGridVisible = false;
+
+        // Save current state to history
+        function saveState() {
+            historyIndex++;
+            if (historyIndex < drawingHistory.length) {
+                drawingHistory.splice(historyIndex);
+            }
+            drawingHistory.push(canvas.toDataURL());
+            if (drawingHistory.length > maxHistory) {
+                drawingHistory.shift();
+                historyIndex--;
+            }
+            
+            // Enable/disable undo/redo buttons
+            document.getElementById('undoButton').disabled = historyIndex <= 0;
+            document.getElementById('redoButton').disabled = historyIndex >= drawingHistory.length - 1;
+        }
+
+        // Restore state from history
+        function restoreState(index) {
+            if (index < 0 || index >= drawingHistory.length) return;
+            
+            const img = new Image();
+            img.src = drawingHistory[index];
+            img.onload = () => {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                
+                if (document.getElementById('realTimeToggle').checked) {
+                    predictDrawing(img.src, true);
+                }
+            };
+        }
+
+        // Drawing functions
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            [lastX, lastY] = [x, y];
+        }
+
+        // Event listeners for drawing
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            [lastX, lastY] = [e.clientX - rect.left, e.clientY - rect.top];
+        });
+
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+            saveState();
+            const imageData = canvas.toDataURL('image/png');
+            if (document.getElementById('realTimeToggle').checked) {
+                predictDrawing(imageData, true);
+            }
+        });
+        canvas.addEventListener('mouseout', () => isDrawing = false);
+
+        // Touch support
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            isDrawing = true;
+            [lastX, lastY] = [touch.clientX - rect.left, touch.clientY - rect.top];
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            [lastX, lastY] = [x, y];
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isDrawing = false;
+            saveState();
+            const imageData = canvas.toDataURL('image/png');
+            if (document.getElementById('realTimeToggle').checked) {
+                predictDrawing(imageData, true);
+            }
+        });
+
+        // Tool selection
+        document.getElementById('penTool').addEventListener('click', () => {
+            currentTool = 'pen';
+            document.querySelectorAll('.tool-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('penTool').classList.add('active');
+            ctx.strokeStyle = 'black';
+        });
+
+        document.getElementById('eraserTool').addEventListener('click', () => {
+            currentTool = 'eraser';
+            document.querySelectorAll('.tool-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('eraserTool').classList.add('active');
+            ctx.strokeStyle = 'white';
+        });
+
+        // Brush size control
+        const brushSize = document.getElementById('brushSize');
+        const brushSizeValue = document.getElementById('brushSizeValue');
+
+        brushSize.addEventListener('input', () => {
+            const size = parseInt(brushSize.value);
+            ctx.lineWidth = size;
+            brushSizeValue.textContent = size + 'px';
+        });
+
+        // Grid toggle
+        const gridCanvas = document.getElementById('gridCanvas');
+        const gridCtx = gridCanvas.getContext('2d');
+
+        function drawGrid() {
+            gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+            if (!isGridVisible) return;
+            
+            gridCtx.strokeStyle = '#000000';
+            gridCtx.lineWidth = 1;
+            
+            // Draw vertical lines
+            for (let x = 0; x <= gridCanvas.width; x += 40) {
+                gridCtx.beginPath();
+                gridCtx.moveTo(x, 0);
+                gridCtx.lineTo(x, gridCanvas.height);
+                gridCtx.stroke();
+            }
+            
+            // Draw horizontal lines
+            for (let y = 0; y <= gridCanvas.height; y += 40) {
+                gridCtx.beginPath();
+                gridCtx.moveTo(0, y);
+                gridCtx.lineTo(gridCanvas.width, y);
+                gridCtx.stroke();
+            }
+        }
+
+        document.getElementById('toggleGrid').addEventListener('click', () => {
+            isGridVisible = !isGridVisible;
+            document.getElementById('toggleGrid').classList.toggle('active');
+            drawGrid();
+        });
+
+        // Clear button functionality
+        clearButton.addEventListener('click', () => {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            resultDiv.textContent = '';
+            confidenceDiv.textContent = '';
+            document.getElementById('processedPreview').innerHTML = '';
+            saveState();
+        });
+
+        // File upload handling
+        const imageUpload = document.getElementById('imageUpload');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const uploadResult = document.getElementById('uploadResult');
+        const uploadConfidence = document.getElementById('uploadConfidence');
+        const uploadLoading = document.getElementById('uploadLoading');
+
+        imageUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            uploadLoading.style.display = 'block';
+            uploadResult.textContent = '';
+            uploadConfidence.textContent = '';
+            uploadPreview.innerHTML = '';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show original and processed images
+                    uploadPreview.innerHTML = `
+                        <div style="display: flex; justify-content: center; gap: 20px; margin: 20px 0;">
+                            <div>
+                                <p>Original Image</p>
+                                <img src="${data.original_image}" style="max-width: 200px; height: auto;">
+                            </div>
+                            <div>
+                                <p>Processed Image</p>
+                                <img src="${data.processed_image}" style="max-width: 200px; height: auto;">
+                            </div>
+                        </div>
+                    `;
+
+                    uploadResult.textContent = `Predicted Digit: ${data.prediction}`;
+                    uploadResult.classList.add('prediction-animation');
+                    if (data.confidence !== null) {
+                        uploadConfidence.textContent = `Confidence: ${data.confidence.toFixed(1)}%`;
+                    }
+
+                    // Add to gallery
+                    addToGallery(data.original_image, data.prediction, data.confidence);
+                } else {
+                    uploadResult.textContent = 'Error: ' + data.error;
+                }
+            } catch (error) {
+                uploadResult.textContent = 'Error: Could not process image';
+                console.error('Error:', error);
+            }
+
+            uploadLoading.style.display = 'none';
+            // Reset file input
+            imageUpload.value = '';
+        });
+
+        // Real-time prediction
+        async function predictDrawing(imageData, addToGalleryFlag = true) {
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image: imageData })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    resultDiv.textContent = `Predicted Digit: ${data.prediction}`;
+                    if (data.confidence !== null) {
+                        confidenceDiv.textContent = `Confidence: ${data.confidence.toFixed(1)}%`;
+                    }
+                    document.getElementById('processedPreview').innerHTML = `
+                        <p>Processed Image (8x8)</p>
+                        <img src="${data.processed_image}" style="width: 80px; height: 80px;">
+                    `;
+                    
+                    // Add to gallery if flag is true
+                    if (addToGalleryFlag) {
+                        addToGallery(imageData, data.prediction, data.confidence);
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Gallery functions
+        function addToGallery(imageData, prediction, confidence) {
+            const galleryItem = document.createElement('div');
+            galleryItem.className = 'gallery-item';
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.onclick = () => {
+                gallery.removeChild(galleryItem);
+                updateGalleryCount();
+            };
+            
+            const img = document.createElement('img');
+            img.src = imageData;
+            
+            const predText = document.createElement('div');
+            predText.className = 'prediction';
+            predText.textContent = `Prediction: ${prediction}`;
+            
+            const confText = document.createElement('div');
+            confText.className = 'confidence';
+            confText.textContent = `${confidence.toFixed(1)}%`;
+            
+            galleryItem.appendChild(deleteBtn);
+            galleryItem.appendChild(img);
+            galleryItem.appendChild(predText);
+            galleryItem.appendChild(confText);
+            
+            gallery.insertBefore(galleryItem, gallery.firstChild);
+            updateGalleryCount();
+        }
+
+        function updateGalleryCount() {
+            const count = gallery.children.length;
+            galleryCount.textContent = `${count} prediction${count !== 1 ? 's' : ''}`;
+        }
+
+        const clearGalleryButton = document.getElementById('clearGalleryButton');
+        clearGalleryButton.addEventListener('click', () => {
+            gallery.innerHTML = '';
+            updateGalleryCount();
+        });
+
+        // Initialize
+        saveState(); // Save initial blank state
+        drawGrid();
+
+        // Tab switching
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
+                
+                // Update buttons
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Update content
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === `${tabId}Tab`) {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+
+        // Evaluation handling
+        const evaluateButton = document.getElementById('evaluateButton');
+        const evaluateLoading = document.getElementById('evaluateLoading');
+        const accuracyResult = document.getElementById('accuracyResult');
+        const performancePlots = document.getElementById('performancePlots');
+        const perDigitStats = document.getElementById('perDigitStats');
+        const misclassifiedExamples = document.getElementById('misclassifiedExamples');
+
+        evaluateButton.addEventListener('click', async () => {
+            try {
+                evaluateButton.disabled = true;
+                evaluateLoading.style.display = 'block';
+                accuracyResult.textContent = '';
+                performancePlots.innerHTML = '';
+                perDigitStats.innerHTML = '';
+                misclassifiedExamples.innerHTML = '';
+
+                const response = await fetch('/evaluate');
+                const data = await response.json();
+
+                if (data.success) {
+                    // Display overall accuracy
+                    accuracyResult.textContent = `Overall Model Accuracy: ${data.accuracy.toFixed(2)}%`;
+                    accuracyResult.classList.add('prediction-animation');
+
+                    // Display plots
+                    performancePlots.innerHTML = `
+                        <img src="${data.plots}" 
+                             alt="Performance Plots" 
+                             style="width: 100%; height: auto;">
+                    `;
+
+                    // Display per-digit accuracy bars
+                    const perDigitHtml = Object.entries(data.per_digit_accuracy)
+                        .sort((a, b) => a[0].localeCompare(b[0]))
+                        .map(([digit, accuracy]) => `
+                            <div class="per-digit-stat">
+                                <span class="digit-label">${digit}</span>
+                                <div class="accuracy-bar">
+                                    <div class="accuracy-fill" style="width: ${accuracy}%"></div>
+                                </div>
+                                <span class="accuracy-value">${accuracy.toFixed(1)}%</span>
+                            </div>
+                        `).join('');
+                    perDigitStats.innerHTML = perDigitHtml;
+
+                    // Display misclassified examples
+                    const misclassifiedHtml = Object.entries(data.misclassified_examples)
+                        .map(([digit, examples]) => `
+                            <div class="misclassified-group">
+                                <h4>Digit ${digit}</h4>
+                                <div class="misclassified-grid">
+                                    ${examples.map(example => `
+                                        <div class="misclassified-item">
+                                            <img src="data:image/png;base64,${example.image}" 
+                                                 alt="Misclassified ${digit}">
+                                            <div class="prediction">
+                                                Predicted as ${example.predicted}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('');
+                    misclassifiedExamples.innerHTML = misclassifiedHtml;
+                } else {
+                    // Show error message
+                    accuracyResult.innerHTML = `
+                        <div class="error-message" style="color: var(--danger-color); padding: 10px; border: 1px solid var(--danger-color); border-radius: 5px; margin: 10px 0;">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                accuracyResult.innerHTML = `
+                    <div class="error-message" style="color: var(--danger-color); padding: 10px; border: 1px solid var(--danger-color); border-radius: 5px; margin: 10px 0;">
+                        <strong>Error:</strong> Could not evaluate model. Please try again later.
+                    </div>
+                `;
+            } finally {
+                evaluateButton.disabled = false;
+                evaluateLoading.style.display = 'none';
+            }
+        });
+
+        // Predict button handling
+        const predictButton = document.getElementById('predictButton');
+        predictButton.addEventListener('click', () => {
+            const imageData = canvas.toDataURL('image/png');
+            predictDrawing(imageData, true);
+        });
+    </script>
+</body>
+</html> 
