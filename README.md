@@ -14,7 +14,7 @@ A web-based digit recognition application that uses machine learning to identify
 
 ## Tech Stack
 
-- Backend: Flask (Python)
+- Backend: Flask
 - Frontend: HTML, CSS, JavaScript
 - Machine Learning: scikit-learn
 - Image Processing: OpenCV, Pillow
@@ -23,7 +23,7 @@ A web-based digit recognition application that uses machine learning to identify
 ## Prerequisites
 
 - Python 3.8 or higher
-- pip (Python package installer)
+- pip 
 
 ## Installation
 
