@@ -16,8 +16,12 @@ import tempfile
 app = Flask(__name__)
 CORS(app)  # Enable CORS
 
-# Load the model
-model = joblib.load('digits_model.pkl')
+# Load the model once when the app starts
+try:
+    model = joblib.load('digits_model.pkl')
+except Exception as e:
+    print(f"Error loading model: {str(e)}")
+    model = None
 
 def preprocess_custom_image(image_array):
     # Convert to grayscale if needed
@@ -316,5 +320,21 @@ def evaluate():
             'error': error_msg
         })
 
+# Add an error handler for 404
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"error": "Resource not found"}), 404
+
+# Add an error handler for 500
+@app.errorhandler(500)
+def server_error(e):
+    return jsonify({"error": "Internal server error"}), 500
+
+# Health check endpoint
+@app.route('/health')
+def health():
+    return jsonify({"status": "healthy", "model_loaded": model is not None})
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) 
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port) 
