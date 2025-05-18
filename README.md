@@ -81,20 +81,6 @@ http://localhost:5000
 - Check per-digit accuracy
 - Review misclassified examples
 
-## Deployment
-
-### Vercel Deployment Steps
-
-1. Push your code to GitHub
-2. Log in to [Vercel](https://vercel.com) using your GitHub account
-3. Click "Import Project"
-4. Select your GitHub repository
-5. Configure the build settings:
-   - Framework Preset: Other
-   - Build Command: `pip install -r requirements.txt`
-   - Output Directory: `public`
-6. Click "Deploy"
-
 ## Project Structure
 
 ```
