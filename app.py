@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_file
+from flask_cors import CORS
 import joblib
 import numpy as np
 import cv2
@@ -6,11 +7,14 @@ import base64
 from PIL import Image
 import io
 from sklearn.datasets import load_digits
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import os
 import tempfile
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS
 
 # Load the model
 model = joblib.load('digits_model.pkl')
@@ -313,4 +317,4 @@ def evaluate():
         })
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) 
